@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitLeaks Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .loading {
+      text-align: center;
+      display: none;
+    }
+    .error {
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .secret {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .secret h3 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+    .no-secrets {
+      text-align: center;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GitLeaks Scanner</h1>
+    <div>
+      <label for="repoUrl">Git Repository URL:</label>
+      <input type="text" id="repoUrl" placeholder="https://github.com/username/repository" value="https://github.com/digininja/leakyrepo">
+      <button id="scanButton">Scan Repository</button>
+    </div>
+    <div class="loading" id="loading">
+      <p>Scanning repository for secrets...</p>
+    </div>
+    <div id="errorContainer" class="error" style="display: none;"></div>
+    <div id="results">
+      <!-- Results will be displayed here -->
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const scanButton = document.getElementById('scanButton');
+      const repoUrlInput = document.getElementById('repoUrl');
+      const loadingDiv = document.getElementById('loading');
+      const errorDiv = document.getElementById('errorContainer');
+      const resultsDiv = document.getElementById('results');
+
+      scanButton.addEventListener('click', function () {
+        const repoUrl = repoUrlInput.value.trim();
+
+        // Clear previous results and errors
+        resultsDiv.innerHTML = '';
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+
+        // Validate input
+        if (!repoUrl) {
+          showError('Please enter a repository URL');
+          return;
+        }
+
+        // Show loading indicator
+        loadingDiv.style.display = 'block';
+
+        // Make API request
+fetch('http://localhost:8000/scan-secrets', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ repo_url: repoUrl }),      
+        })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => {
+                throw new Error(err.error || 'Scan failed');
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Hide loading indicator
+            loadingDiv.style.display = 'none';
+
+            // Handle response
+            if (data.scan_successful) {
+              const secrets = data.secrets || [];
+              if (secrets.length === 0) {
+                resultsDiv.innerHTML = '<p class="no-secrets">No secrets found in the repository.</p>';
+              } else {
+                secrets.forEach(secret => {
+                  const secretDiv = document.createElement('div');
+                  secretDiv.className = 'secret';
+                  secretDiv.innerHTML = `
+                    <h3>${secret.description || 'Unknown secret type'}</h3>
+                    <p><strong>File:</strong> ${secret.file}</p>
+                    <p><strong>Line:</strong> ${secret.line}</p>
+                    <p><strong>Secret:</strong> ${secret.secret}</p>
+                  `;
+                  resultsDiv.appendChild(secretDiv);
+                });
+              }
+            } else {
+              throw new Error(data.error || 'An error occurred during scanning.');
+            }
+          })
+          .catch(error => {
+            // Hide loading indicator
+            loadingDiv.style.display = 'none';
+
+            // Show error message
+            showError(error.message || 'An unexpected error occurred. Please try again.');
+          });
+      });
+
+      function showError(message) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Scanner</title>
+  <style>
+    body {
+      font-family: 'Roboto Mono', monospace;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      color: #ffcb74;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #ffdd99;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 16px;
+    }
+    input[type="text"]::placeholder {
+      color: #ccc;
+    }
+    button {
+      background: linear-gradient(135deg, #ff9900, #ff7733);
+      color: #fff;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: transform 0.2s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .loading {
+      text-align: center;
+      display: none;
+      font-size: 18px;
+      color: #ffcb74;
+      margin-top: 20px;
+    }
+    .error {
+      color: #ff5555;
+      background: rgba(255, 0, 0, 0.1);
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .secret {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .secret h3 {
+      margin: 0 0 10px;
+      color: #ffcb74;
+      font-size: 1.2em;
+    }
+    .secret p {
+      margin: 5px 0;
+      color: #e0e0e0;
+    }
+    .no-secrets {
+      text-align: center;
+      font-style: italic;
+      color: #bfbfbf;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Secret Scanner</h1>
+    <div>
+      <label for="repoUrl">Git Repository URL:</label>
+      <input type="text" id="repoUrl" placeholder="https://github.com/username/repository" value="https://github.com/Plazmaz/leaky-repo">
+      <button id="scanButton">Scan</button>
+    </div>
+    <div class="loading" id="loading">
+      <p>Scanning repository for secrets...</p>
+    </div>
+    <div id="errorContainer" class="error" style="display: none;"></div>
+    <div id="results">
+      <!-- Results will be displayed here -->
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const scanButton = document.getElementById('scanButton');
+      const repoUrlInput = document.getElementById('repoUrl');
+      const loadingDiv = document.getElementById('loading');
+      const errorDiv = document.getElementById('errorContainer');
+      const resultsDiv = document.getElementById('results');
+
+      scanButton.addEventListener('click', function () {
+        const repoUrl = repoUrlInput.value.trim();
+
+        // Clear previous results and errors
+        resultsDiv.innerHTML = '';
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+
+        // Validate input
+        if (!repoUrl) {
+          showError('Please enter a repository URL');
+          return;
+        }
+
+        // Show loading indicator
+        loadingDiv.style.display = 'block';
+
+        // Make API request
+        fetch('http://localhost:8000/scan-secrets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ repo_url: repoUrl }),
+        })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => {
+                console.error('Backend error:', err); // Log backend errors
+                throw new Error(err.error || 'Scan failed');
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Backend response:', data); // Log the full response
+
+            // Hide loading indicator
+            loadingDiv.style.display = 'none';
+
+            // Handle response
+            if (data.scan_successful) {
+              const secrets = data.secrets || [];
+              console.log('Secrets array:', secrets); // Log the secrets array
+
+              if (secrets.length === 0) {
+                resultsDiv.innerHTML = '<p class="no-secrets">No secrets found in the repository.</p>';
+              } else {
+                secrets.forEach(secret => {
+                  console.log('Processing secret:', secret); // Log each secret
+
+                  const secretDiv = document.createElement('div');
+                  secretDiv.className = 'secret';
+                  secretDiv.innerHTML = `
+                    <h3>${secret.description || 'Unknown secret type'}</h3>
+                    <p><strong>File:</strong> ${secret.file}</p>
+                    <p><strong>Line:</strong> ${secret.line}</p>
+                    <p><strong>Secret:</strong> ${secret.secret}</p>
+                  `;
+                  resultsDiv.appendChild(secretDiv);
+                });
+              }
+            } else {
+              throw new Error(data.error || 'An error occurred during scanning.');
+            }
+          })
+          .catch(error => {
+            console.error('Frontend error:', error); // Log frontend errors
+
+            // Hide loading indicator
+            loadingDiv.style.display = 'none';
+
+            // Show error message
+            showError(error.message || 'An unexpected error occurred. Please try again.');
+          });
+      });
+
+      function showError(message) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = message;
+      }
+    });
+  </script>
+</body>
+</html>
