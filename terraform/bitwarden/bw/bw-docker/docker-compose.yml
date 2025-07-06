@@ -1,0 +1,23 @@
+services:
+  bitwarden:
+    image: bitwarden/self-host:dev
+    env_file:
+      - settings.env
+    restart: always
+    ports:
+      - "8080:8080"  # HTTP - for certificate renewal
+      - "8443:8443"  # HTTPS
+    volumes:
+      - bitwarden:/etc/bitwarden
+      - logs:/var/log/bitwarden
+      - ./ssl:/etc/bitwarden/ssl:ro
+      - ./bitwarden-ssl.conf:/etc/nginx/conf.d/default.conf
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  bitwarden:
+  logs:
