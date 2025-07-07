@@ -1,83 +1,83 @@
-# Skanner
+# Сканнер
 
 <p align="center">
-  <img src="docs/images/skanner-logo.png" alt="Skanner Logo" width="200"/>
+  <img src="docs/images/skanner-logo.png" alt="Логотип Сканнера" width="200"/>
 </p>
 
-Example of an advanced security scanning tool designed to detect secrets, credentials, and sensitive information in Git repositories. It helps developers and security teams identify potential security risks before they become vulnerabilities.
+Пример продвинутого инструмента для сканирования безопасности, предназначенного для обнаружения секретов, учетных данных и конфиденциальной информации в Git-репозиториях. Он помогает разработчикам и командам безопасности выявлять потенциальные риски безопасности до того, как они станут уязвимостями.
 
-## Features
+## Возможности
 
-- **Comprehensive Secret Detection**: Scans Git repositories for exposed secrets and credentials
-- **Multiple Secret Types**: Identifies various sensitive information including:
-  - API keys
-  - Passwords and credentials
-  - Private keys (RSA, SSH, PGP)
-  - OAuth tokens
-  - Slack tokens
-  - AWS keys and cloud credentials
-  - High entropy strings
-  - Database connection strings
-  - Authorization headers
-- **REST API**: Easy integration with CI/CD pipelines and other tools
-- **Detailed Reporting**: Comprehensive reports with context for each finding
-- **Low False Positives**: Advanced algorithms to reduce false positives
-- **Customizable**: Add your own patterns via configuration
+- **Комплексное обнаружение секретов**: Сканирует Git-репозитории на предмет раскрытых секретов и учетных данных
+- **Множество типов секретов**: Идентифицирует различную конфиденциальную информацию, включая:
+  - API-ключи
+  - Пароли и учетные данные
+  - Приватные ключи (RSA, SSH, PGP)
+  - OAuth-токены
+  - Slack-токены
+  - AWS-ключи и учетные данные облачных сервисов
+  - Строки с высокой энтропией
+  - Строки подключения к базам данных
+  - Заголовки авторизации
+- **REST API**: Простая интеграция с CI/CD-конвейерами и другими инструментами
+- **Подробная отчетность**: Исчерпывающие отчеты с контекстом для каждой находки
+- **Низкий уровень ложных срабатываний**: Продвинутые алгоритмы для снижения ложных срабатываний
+- **Настраиваемость**: Добавление собственных шаблонов через конфигурацию
 
-## Getting Started
+## Начало работы
 
-### Prerequisites
+### Предварительные требования
 
-- Go 1.16+ (for the scanner worker)
-- Python 3.8+ (for the API server)
+- Go 1.16+ (для рабочего сканера)
+- Python 3.8+ (для API-сервера)
 - FastAPI
-- Docker (optional, for containerized deployment)
+- Docker (опционально, для развертывания в контейнерах)
 
-### Installation
+### Установка
 
-#### From Source
+#### Из исходного кода
 
-1. Clone the repository:
+1. Клонируйте репозиторий:
 ```bash
 git clone https://github.com/yourusername/skanner.git
 cd skanner
 ```
 
-2. Install Python dependencies:
+2. Установите зависимости Python:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Build the Go worker (optional, pre-built binaries are included):
+3. Соберите Go-воркер (опционально, предварительно собранные бинарные файлы включены):
 ```bash
 cd skanner/worker
 go build -o skanner-worker
 ```
 
-#### Using Docker
+#### Использование Docker
 
 ```bash
 docker pull yourusername/skanner
 docker run -p 8000:8000 yourusername/skanner
 ```
 
-### Starting the Server
+### Запуск сервера
 
 ```bash
 uvicorn skanner.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 📖 Usage
+## 📖 Использование
 
-### API Endpoints
+### API-эндпоинты
 
-| Endpoint | Method | Description |
+| Эндпоинт | Метод | Описание |
 |----------|--------|-------------|
-| `/scan-secrets` | POST | Scan a repository for secrets |
-| `/scan-status/{scan_id}` | GET | Get the status of a scan |
-| `/scan-results/{scan_id}` | GET | Get the results of a completed scan |
+| `/scan-secrets` | POST | Сканирование репозитория на наличие секретов |
+| `/scan-status/{scan_id}` | GET | Получение статуса сканирования |
+| `/scan-results/{scan_id}` | GET | Получение результатов завершенного сканирования |
 
-### Example: Scanning a Repository
+### Пример: Сканирование репозитория
 
 ```bash
 curl -X POST "http://localhost:8000/scan-secrets" \
@@ -85,7 +85,7 @@ curl -X POST "http://localhost:8000/scan-secrets" \
   -d '{"repo_url": "https://github.com/example/repo"}'
 ```
 
-### Response Format
+### Формат ответа
 
 ```json
 {
@@ -106,11 +106,11 @@ curl -X POST "http://localhost:8000/scan-secrets" \
 }
 ```
 
-##  Configuration
+## Конфигурация
 
-### Custom Patterns
+### Пользовательские шаблоны
 
-Create a YAML file with your custom patterns:
+Создайте YAML-файл с вашими пользовательскими шаблонами:
 
 ```yaml
 patterns:
@@ -122,7 +122,7 @@ patterns:
       regex: "int[-_]?token['\"]?\\s*[:=]\\s*['\"]?([a-zA-Z0-9_-]{24,})"
 ```
 
-Then pass it to the scanner:
+Затем передайте его сканеру:
 
 ```bash
 curl -X POST "http://localhost:8000/scan-secrets" \
@@ -133,26 +133,26 @@ curl -X POST "http://localhost:8000/scan-secrets" \
   }'
 ```
 
-## Security Considerations
+## Соображения безопасности
 
-- This tool is designed for security professionals to audit their own code
-- Always ensure you have permission before scanning repositories that don't belong to you
-- Handle scan results securely as they may contain sensitive information
+- Этот инструмент предназначен для специалистов по безопасности для аудита собственного кода
+- Всегда убедитесь, что у вас есть разрешение перед сканированием репозиториев, которые вам не принадлежат
+- Обрабатывайте результаты сканирования безопасно, так как они могут содержать конфиденциальную информацию
 
-## Contributing
+## Вклад в проект
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Вклады приветствуются! Пожалуйста, не стесняйтесь отправлять Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Форкните репозиторий
+2. Создайте ветку для вашей функции (`git checkout -b feature/amazing-feature`)
+3. Зафиксируйте ваши изменения (`git commit -m 'Добавить удивительную функцию'`)
+4. Отправьте в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
 
-## License
+## Лицензия
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Этот проект лицензирован под лицензией MIT - см. файл [LICENSE](LICENSE) для получения подробной информации.
 
-## Contact
+## Контакты
 
-Project Link: [https://github.com/yourusername/skanner](https://github.com/yourusername/skanner)
+Ссылка на проект: [https://github.com/yourusername/skanner](https://github.com/yourusername/skanner)
